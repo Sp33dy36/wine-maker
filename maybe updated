@@ -1,0 +1,111 @@
+package core;
+import java.awt.Graphics2D;
+import org.osbot.rs07.script.Script;
+import org.osbot.rs07.script.ScriptManifest;
+import org.osbot.rs07.utility.ConditionalSleep;
+
+@ScriptManifest(author = "CloudyMan", info = "Cloudy wine maker", name = "Cloudy wine maker", version = 1.2, logo = "https://imgur.com/a/0Ckrc7P")
+public class Main extends Script
+	{
+	
+	@Override
+	public void onStart() throws InterruptedException {
+		log("Script starting...");
+	}
+	
+	@Override
+	public int onLoop() throws InterruptedException
+	{
+		bank();
+		makewine();
+		waiting();
+		
+		return random(100, 200);
+	}
+		
+	
+
+		
+
+	@Override
+	public void onExit()
+	{
+		log("Thanks for using my wine maker <3");
+	}
+	@Override
+	public void onPaint(Graphics2D g) {
+
+	}
+	
+	private void makewine() throws InterruptedException
+	{
+        
+		if(getInventory().contains("Grapes") || getInventory().contains("Jug of water"))
+		{
+			getInventory().getItem("grapes").interact("use");
+			sleep(random(50, 150));
+			getInventory().getItem("Jug of water").interact();
+			sleep(random(700,1000));
+			getKeyboard().typeString("1", false);
+		}else {
+			bank();
+		}
+	
+	}
+	
+	private void waiting() throws InterruptedException
+	{
+        
+		if(myPlayer().isAnimating())
+		{
+            new ConditionalSleep(20000)
+            {
+                @Override
+                public boolean condition()
+                {
+                    return !myPlayer().isAnimating();
+                }
+            }.sleep();
+            if(!myPlayer().isAnimating()){
+            	bank();
+            }
+        }
+		}
+	
+	private void bank() throws InterruptedException
+	{
+        
+		if(!getInventory().contains("Grapes") || !getInventory().contains("Jug of water"))
+		{
+			getBank().open();
+			 if(!getBank().isOpen())
+		        {
+		            new ConditionalSleep(5000)
+		            {
+		                @Override
+		                public boolean condition()
+		                {
+		                    return getBank().isOpen();
+		                }
+		            }.sleep();
+		        }
+			 if(getInventory().contains("Unfermented wine")) {
+				 getBank().depositAll();
+				 getBank().withdraw("Grapes", 14);
+				 sleep(random(250,400));
+				 getBank().withdraw("Jug of water", 14);
+				 sleep(random(250,400));
+				 getBank().close();
+			 } else {
+				 getBank().withdraw("Grapes", 14);
+				 sleep(random(250,400));
+				 getBank().withdraw("Jug of water", 14);
+				 sleep(random(250,400));
+				 getBank().close();
+			 }
+		}
+	
+	}
+	
+	}
+	

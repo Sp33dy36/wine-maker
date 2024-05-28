@@ -1,110 +1,75 @@
 package core;
-import java.awt.Graphics2D;
+
 import org.osbot.rs07.api.ui.Skill;
 import org.osbot.rs07.script.Script;
 import org.osbot.rs07.script.ScriptManifest;
 import org.osbot.rs07.utility.ConditionalSleep;
 
-@ScriptManifest(author = "CloudyMan", info = "Cloudy wine maker", name = "Cloudy wine maker", version = 1.1, logo = "https://imgur.com/a/0Ckrc7P")
-public class Main extends Script
-	{
-	
-	@Override
-	public void onStart() throws InterruptedException {
-		log("Script starting...");
-		if (getSkills().getStatic(Skill.COOKING) < 35) {
-			log("Can't make wines at this cooking level - stopping");
-			stop(true);
-		}
-		if(!getInventory().isEmpty())
-		{
-			 getBank().open();
-			 if(!getBank().isOpen())
-		        {
-		            new ConditionalSleep(5000)
-		            {
-		                @Override
-		                public boolean condition()
-		                {
-		                    return getBank().isOpen();
-		                }
-		            }.sleep();
-		        }
-	            getBank().depositAll();
-	            sleep(random(250, 500));
-		}
-		else {
-			getBank().open();
-		}
-	}
+@ScriptManifest(author = "CloudyMan", info = "Cloudy wine maker", name = "Cloudy wine maker", version = 2.0, logo = "https://imgur.com/a/0Ckrc7P")
+public class Main extends Script {
 
-	@Override
-	public int onLoop() throws InterruptedException
-	{
-		 if(!getBank().isOpen())
-	        {
-	            new ConditionalSleep(5000)
-	            {
-	                @Override
-	                public boolean condition()
-	                {
-	                    return getBank().isOpen();
-	                }
-	            }.sleep();
-	        }
-		sleep(random(250, 400));
-		log("withdrawing grapes...");
-		getBank().withdraw("Grapes", 14);
-		sleep(random(250, 400));
-		log("withdrawing jugs of water...");
-		getBank().withdraw("Jug of water", 14);
-		sleep(random(250, 400));
-		getBank().close();
-		sleep(random(250, 400));
-		if(!getInventory().contains("Grapes") || !getInventory().contains("Jug of water"))
-		{
-			sleep(random(13000,16000));
-			log("logging out...");
-			logoutTab.logOut();
-			stop();
-		}
-		log("using grapes on jugs of water...");
-		getInventory().getItem("Grapes").interact("Use");
-		sleep(random(50, 150));
-		getInventory().getItem("Jug of water").interact();
-		sleep(random(500, 700));
-		getKeyboard().typeString("1", false);
-		log("waiting for wine to be made...");
-		sleep(random(18000,20000));
-		getBank().open();
-		 if(!getBank().isOpen())
-	        {
-	            new ConditionalSleep(5000)
-	            {
-	                @Override
-	                public boolean condition()
-	                {
-	                    return getBank().isOpen();
-	                }
-	            }.sleep();
-	        }
-		sleep(random(250, 400));
-		log("depositing wines...");
-		getBank().depositAll();
-		
-		return random(50, 150);
-	}
+    private static final String GRAPES = "Grapes";
+    private static final String JUG_OF_WATER = "Jug of water";
 
-		
+    @Override
+    public void onStart() {
+        log("Script starting...");
+        if (getSkills().getStatic(Skill.COOKING) < 35) {
+            log("Cooking level too low to make wines - stopping");
+            stop(true);
+        }
+    }
 
-	@Override
-	public void onExit()
-	{
-		log("Thanks for using my wine maker <3");
-	}
-	@Override
-	public void onPaint(Graphics2D g) {
+    @Override
+    public int onLoop() throws InterruptedException {
+        if (needToBank()) {
+            bank();
+        } else {
+            makeWines();
+        }
+        return random(300, 500);
+    }
 
-	}
-	
-	}
+    private boolean needToBank() {
+        return !getInventory().contains(GRAPES) || !getInventory().contains(JUG_OF_WATER);
+    }
+
+    private void bank() throws InterruptedException {
+        if (!getBank().isOpen()) {
+            getBank().open();
+            new ConditionalSleep(5000) {
+                @Override
+                public boolean condition() throws InterruptedException {
+                    return getBank().isOpen();
+                }
+            }.sleep();
+        }
+        getBank().depositAll();
+        sleep(random(800, 1200));
+        getBank().withdraw(GRAPES, 14);
+        sleep(random(800, 1200));
+        getBank().withdraw(JUG_OF_WATER, 14);
+        sleep(random(800, 1200));
+        getBank().close();
+    }
+
+    private void makeWines() throws InterruptedException {
+        log("Making wines...");
+        getInventory().getItem(GRAPES).interact("Use");
+        sleep(random(400, 600));
+        getInventory().getItem(JUG_OF_WATER).interact();
+        sleep(random(400, 600));
+        getKeyboard().typeString("1", false);
+        new ConditionalSleep(20000) {
+            @Override
+            public boolean condition() throws InterruptedException {
+                return !getInventory().contains(GRAPES) || !getInventory().contains(JUG_OF_WATER);
+            }
+        }.sleep();
+    }
+
+    @Override
+    public void onExit() {
+        log("Thanks for using my wine maker <3");
+    }
+}
